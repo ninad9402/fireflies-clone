@@ -20,7 +20,7 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginWithOAuth, loginAsDemo, isLoading } = useAuth();
+  const { login, loginAsDemo, isLoading } = useAuth();
 
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -57,15 +57,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleOAuth = async (provider: "google" | "microsoft") => {
-    setSubmitting(true);
-    try {
-      await loginWithOAuth(provider);
-    } catch (err: any) {
-      setError(err?.message || "OAuth sign-in failed. Please try again.");
-      setSubmitting(false);
-    }
-  };
 
 
   return (
@@ -243,72 +234,18 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => loginAsDemo("admin")}
-                    className="py-1.5 px-2 rounded-lg bg-[#1F2933] hover:bg-[#D4AF37] hover:text-black text-[#D4AF37] border border-[#3E4C59] text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-sm"
+                    className="py-2 px-2.5 rounded-lg bg-[#1F2933] hover:bg-[#D4AF37] hover:text-black text-[#D4AF37] border border-[#3E4C59] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm"
                   >
                     <span>👑 Admin Demo</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => loginAsDemo("recruiter")}
-                    className="py-1.5 px-2 rounded-lg bg-[#1F2933] hover:bg-[#D4AF37] hover:text-black text-[#D4AF37] border border-[#3E4C59] text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-sm"
+                    className="py-2 px-2.5 rounded-lg bg-[#1F2933] hover:bg-[#D4AF37] hover:text-black text-[#D4AF37] border border-[#3E4C59] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm"
                   >
                     <span>💼 Recruiter Demo</span>
                   </button>
                 </div>
-              </div>
-
-              {/* OAuth Social Buttons */}
-              <div className="grid grid-cols-2 gap-2.5 mb-5">
-                <button
-                  type="button"
-                  onClick={() => handleOAuth("google")}
-                  disabled={submitting}
-                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#0B0B0B] hover:bg-[#151D24] text-slate-200 border border-[#3E4C59] hover:border-[#D4AF37]/50 text-xs font-semibold transition disabled:opacity-50 shadow-sm"
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
-                    <path
-                      fill="#EA4335"
-                      d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
-                    />
-                    <path
-                      fill="#4285F4"
-                      d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12 0 12s.7 2.3 1.9 4.7l3.7-1.9z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
-                    />
-                  </svg>
-                  <span>Google</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleOAuth("microsoft")}
-                  disabled={submitting}
-                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#0B0B0B] hover:bg-[#151D24] text-slate-200 border border-[#3E4C59] hover:border-[#D4AF37]/50 text-xs font-semibold transition disabled:opacity-50 shadow-sm"
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 23 23">
-                    <path fill="#f35325" d="M1 1h10v10H1z" />
-                    <path fill="#81bc06" d="M12 1h10v10H12z" />
-                    <path fill="#05a6f0" d="M1 12h10v10H1z" />
-                    <path fill="#ffba08" d="M12 12h10v10H12z" />
-                  </svg>
-                  <span>Microsoft</span>
-                </button>
-              </div>
-
-              {/* Divider */}
-              <div className="relative flex py-2 items-center mb-5">
-                <div className="flex-grow border-t border-[#3E4C59]"></div>
-                <span className="flex-shrink mx-3 text-[10px] font-bold text-[#9AA5B1] uppercase tracking-wider">
-                  or continue with email
-                </span>
-                <div className="flex-grow border-t border-[#3E4C59]"></div>
               </div>
 
               {/* Error Alert */}
@@ -318,6 +255,7 @@ export default function LoginPage() {
                   {error}
                 </div>
               )}
+
 
               {/* Forgot password success note */}
               {forgotSent && (
