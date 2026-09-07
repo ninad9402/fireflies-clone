@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export interface User {
   id: string;
@@ -12,49 +12,100 @@ export interface User {
   plan: string;
 }
 
+export interface RegisteredAccount {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  avatar: string;
+  plan: string;
+  createdAt: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<boolean>;
-  loginWithOAuth: (provider: "google" | "microsoft") => Promise<void>;
+  signup: (name: string, email: string, pass: string) => Promise<boolean>;
   loginAsDemo: (role?: "admin" | "recruiter") => void;
   logout: () => void;
 }
 
-const DEFAULT_USER: User = {
-  id: "usr_1",
-  name: "Ninad Sharma",
-  email: "ninadsharma27@gmail.com",
-  role: "Workspace Owner",
-  avatar: "NS",
-  plan: "Pro Workspace",
-};
+const SESSION_KEY = "fireflies_current_session";
+const USERS_DB_KEY = "fireflies_users_database";
+
+// Pre-seeded initial registered accounts
+const INITIAL_ACCOUNTS: RegisteredAccount[] = [
+  {
+    id: "usr_admin",
+    name: "Ninad Sharma",
+    email: "ninadsharma27@gmail.com",
+    password: "password123",
+    role: "Workspace Owner",
+    avatar: "NS",
+    plan: "Pro Workspace",
+    createdAt: "2026-09-01T00:00:00.000Z",
+  },
+  {
+    id: "usr_demo",
+    name: "Demo Evaluator",
+    email: "demo@fireflies.ai",
+    password: "password123",
+    role: "Hiring Manager",
+    avatar: "DE",
+    plan: "Pro Workspace",
+    createdAt: "2026-09-02T00:00:00.000Z",
+  },
+];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = "fireflies_auth_v3";
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
 
-  // Load session from localStorage on mount
+  // Helper to get registered accounts
+  const getRegisteredAccounts = (): RegisteredAccount[] => {
+    try {
+      const stored = localStorage.getItem(USERS_DB_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      // Seed default accounts
+      localStorage.setItem(USERS_DB_KEY, JSON.stringify(INITIAL_ACCOUNTS));
+      return INITIAL_ACCOUNTS;
+    } catch {
+      return INITIAL_ACCOUNTS;
+    }
+  };
+
+  // Helper to save registered accounts
+  const saveRegisteredAccounts = (accounts: RegisteredAccount[]) => {
+    try {
+      localStorage.setItem(USERS_DB_KEY, JSON.stringify(accounts));
+    } catch (e) {
+      console.error("Failed to save accounts database", e);
+    }
+  };
+
+  // Check active session on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      // Ensure default accounts exist
+      getRegisteredAccounts();
+
+      const savedSession = localStorage.getItem(SESSION_KEY);
+      if (savedSession) {
+        const parsed = JSON.parse(savedSession);
         if (parsed && parsed.email) {
           setUser(parsed);
         } else {
           setUser(null);
         }
       } else {
-        // User is not authenticated by default; require login
         setUser(null);
       }
     } catch (e) {
@@ -65,98 +116,145 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // SIGN IN: Verifies against registered user database
   const login = async (email: string, pass: string): Promise<boolean> => {
     setIsLoading(true);
-    // Simulate short network verification
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    if (!email || !email.includes("@")) {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = pass.trim();
+
+    if (!cleanEmail || !cleanEmail.includes("@")) {
       setIsLoading(false);
-      throw new Error("Please enter a valid work email.");
+      throw new Error("Please enter a valid email address.");
     }
-    if (!pass || pass.length < 4) {
+    if (!cleanPass) {
       setIsLoading(false);
-      throw new Error("Password must be at least 4 characters.");
+      throw new Error("Please enter your password.");
     }
 
-    const nameFromEmail = email.split("@")[0].replace(/[._]/g, " ");
-    const formattedName = nameFromEmail
-      .split(" ")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
+    const accounts = getRegisteredAccounts();
+    const existing = accounts.find((acc) => acc.email.toLowerCase() === cleanEmail);
 
-    const initials = formattedName
+    if (!existing) {
+      setIsLoading(false);
+      throw new Error(
+        `No account found with "${cleanEmail}". Please Sign Up first to create your account.`
+      );
+    }
+
+    if (existing.password !== cleanPass) {
+      setIsLoading(false);
+      throw new Error("Incorrect password. Please check your credentials and try again.");
+    }
+
+    const sessionUser: User = {
+      id: existing.id,
+      name: existing.name,
+      email: existing.email,
+      role: existing.role,
+      avatar: existing.avatar,
+      plan: existing.plan,
+    };
+
+    setUser(sessionUser);
+    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
+    setIsLoading(false);
+    return true;
+  };
+
+  // SIGN UP: Registers a new user account
+  const signup = async (name: string, email: string, pass: string): Promise<boolean> => {
+    setIsLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = pass.trim();
+
+    if (!cleanName || cleanName.length < 2) {
+      setIsLoading(false);
+      throw new Error("Please enter your full name (minimum 2 characters).");
+    }
+    if (!cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
+      setIsLoading(false);
+      throw new Error("Please enter a valid work email address.");
+    }
+    if (!cleanPass || cleanPass.length < 6) {
+      setIsLoading(false);
+      throw new Error("Password must be at least 6 characters long.");
+    }
+
+    const accounts = getRegisteredAccounts();
+    const existing = accounts.find((acc) => acc.email.toLowerCase() === cleanEmail);
+
+    if (existing) {
+      setIsLoading(false);
+      throw new Error(
+        `An account with "${cleanEmail}" already exists. Please Sign In instead.`
+      );
+    }
+
+    const initials = cleanName
       .split(" ")
       .slice(0, 2)
       .map((n) => n[0]?.toUpperCase() || "")
       .join("") || "US";
 
-    const loggedInUser: User = {
+    const newAccount: RegisteredAccount = {
       id: `usr_${Date.now()}`,
-      name: formattedName || "Ninad Sharma",
-      email: email.toLowerCase(),
-      role: email.includes("admin") ? "Workspace Owner" : "Member",
+      name: cleanName,
+      email: cleanEmail,
+      password: cleanPass,
+      role: "Member",
       avatar: initials,
       plan: "Pro Workspace",
+      createdAt: new Date().toISOString(),
     };
 
-    setUser(loggedInUser);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedInUser));
+    const updated = [...accounts, newAccount];
+    saveRegisteredAccounts(updated);
+
+    const sessionUser: User = {
+      id: newAccount.id,
+      name: newAccount.name,
+      email: newAccount.email,
+      role: newAccount.role,
+      avatar: newAccount.avatar,
+      plan: newAccount.plan,
+    };
+
+    setUser(sessionUser);
+    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
     setIsLoading(false);
     return true;
   };
 
-
-  const loginWithOAuth = async (provider: "google" | "microsoft") => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    const oAuthUser: User =
-      provider === "google"
-        ? {
-            id: `usr_google_${Date.now()}`,
-            name: "Ninad Sharma (Google)",
-            email: "ninadsharma27@gmail.com",
-            role: "Workspace Admin",
-            avatar: "NS",
-            plan: "Pro Workspace",
-          }
-        : {
-            id: `usr_msft_${Date.now()}`,
-            name: "Ninad Sharma (Microsoft)",
-            email: "ninad.sharma@outlook.com",
-            role: "Enterprise Lead",
-            avatar: "NS",
-            plan: "Enterprise Suite",
-          };
-
-    setUser(oAuthUser);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(oAuthUser));
-    setIsLoading(false);
-    router.push("/");
-  };
-
+  // Fast Demo 1-Click Evaluation Login
   const loginAsDemo = (role: "admin" | "recruiter" = "admin") => {
-    const demoUser: User =
-      role === "admin"
-        ? DEFAULT_USER
-        : {
-            id: "usr_recruiter",
-            name: "Recruiter / Evaluator",
-            email: "evaluator@fireflies.ai",
-            role: "Hiring Manager",
-            avatar: "RE",
-            plan: "Pro Workspace",
-          };
+    const targetEmail = role === "admin" ? "ninadsharma27@gmail.com" : "demo@fireflies.ai";
+    const accounts = getRegisteredAccounts();
+    const account =
+      accounts.find((acc) => acc.email === targetEmail) ||
+      (role === "admin" ? INITIAL_ACCOUNTS[0] : INITIAL_ACCOUNTS[1]);
 
-    setUser(demoUser);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(demoUser));
+    const sessionUser: User = {
+      id: account.id,
+      name: account.name,
+      email: account.email,
+      role: account.role,
+      avatar: account.avatar,
+      plan: account.plan,
+    };
+
+    setUser(sessionUser);
+    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
     router.push("/");
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SESSION_KEY);
     router.push("/login");
   };
 
@@ -167,7 +265,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         isLoading,
         login,
-        loginWithOAuth,
+        signup,
         loginAsDemo,
         logout,
       }}

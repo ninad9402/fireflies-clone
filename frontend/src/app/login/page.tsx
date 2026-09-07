@@ -20,7 +20,7 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginAsDemo, isLoading } = useAuth();
+  const { login, signup, loginAsDemo, isLoading } = useAuth();
 
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -41,21 +41,49 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!email || !password) {
-      setError("Please fill in both email and password.");
-      return;
-    }
 
-    setSubmitting(true);
-    try {
-      await login(email, password);
-      router.push("/");
-    } catch (err: any) {
-      setError(err?.message || "Authentication failed. Please check credentials.");
-    } finally {
-      setSubmitting(false);
+    if (mode === "signup") {
+      if (!name || name.trim().length < 2) {
+        setError("Please enter your full name (minimum 2 characters).");
+        return;
+      }
+      if (!email || !email.includes("@")) {
+        setError("Please enter a valid work email address.");
+        return;
+      }
+      if (!password || password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
+      }
+
+      setSubmitting(true);
+      try {
+        await signup(name, email, password);
+        router.push("/");
+      } catch (err: any) {
+        setError(err?.message || "Sign up failed. Please try again.");
+      } finally {
+        setSubmitting(false);
+      }
+    } else {
+      // Sign In mode: verify against registered user database
+      if (!email || !password) {
+        setError("Please fill in both email and password.");
+        return;
+      }
+
+      setSubmitting(true);
+      try {
+        await login(email, password);
+        router.push("/");
+      } catch (err: any) {
+        setError(err?.message || "Authentication failed. Please check credentials.");
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
+
 
 
 
