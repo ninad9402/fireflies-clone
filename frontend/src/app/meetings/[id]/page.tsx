@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import {
   Calendar,
   Clock,
@@ -21,15 +21,11 @@ import { AiSummaryPanel } from "@/components/detail/AiSummaryPanel";
 import { EditMeetingModal } from "@/components/detail/EditMeetingModal";
 import { PlaceholderModal } from "@/components/layout/PlaceholderModal";
 
-export default function MeetingDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const resolvedParams = use(params);
-  const meetingId = Number(resolvedParams.id);
+function MeetingDetailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
+  const meetingId = Number(params?.id || 1);
 
   const [meeting, setMeeting] = useState<MeetingDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +34,7 @@ export default function MeetingDetailPage({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+
 
   // Modals
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -269,3 +266,21 @@ export default function MeetingDetailPage({
     </div>
   );
 }
+
+export default function MeetingDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center p-12 bg-[#0B0B0B] text-slate-300">
+          <div className="flex flex-col items-center gap-3">
+            <Sparkles className="w-8 h-8 text-[#D4AF37] animate-spin" />
+            <p className="text-sm font-medium text-[#9AA5B1]">Loading meeting intelligence...</p>
+          </div>
+        </div>
+      }
+    >
+      <MeetingDetailContent />
+    </Suspense>
+  );
+}
+
