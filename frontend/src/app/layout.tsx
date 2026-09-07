@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { AuthProvider } from "@/context/AuthContext";
+import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
   title: "Fireflies.ai Clone — AI Meeting Notes & Transcription",
@@ -17,17 +18,12 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased flex">
         <ThemeProvider>
-          <div className="flex w-full min-h-screen">
-            {/* Left Sidebar Navigation */}
-            <Sidebar />
-
-            {/* Main Application Content Area */}
-            <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-              {children}
-            </main>
-          </div>
+          <AuthProvider>
+            <AppShell>{children}</AppShell>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
+

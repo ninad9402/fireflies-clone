@@ -12,8 +12,11 @@ import {
   Radio,
   Sun,
   Moon,
+  LogOut,
+  LogIn,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
 import { PlaceholderModal } from "./PlaceholderModal";
 
 interface NavItem {
@@ -29,6 +32,7 @@ export const Sidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { isDarkMode, toggleTheme } = useTheme();
+  const { user, isAuthenticated, logout } = useAuth();
   const [modalType, setModalType] = useState<"bot" | "integrations" | "team" | "settings" | null>(null);
 
   const mainNav: NavItem[] = [
@@ -169,21 +173,39 @@ export const Sidebar = () => {
             <span className="text-[10px] text-[#9AA5B1]">Toggle</span>
           </button>
 
-          {/* User & Workspace Pill */}
-          <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#1F2933] border border-[#3E4C59]">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-md bg-gradient-to-br from-[#D4AF37] to-amber-600 flex items-center justify-center font-bold text-xs text-black shadow-sm">
-                NS
+          {/* User & Workspace Pill with Logout Action */}
+          {isAuthenticated && user ? (
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#1F2933] border border-[#3E4C59] group">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-7 h-7 rounded-md bg-gradient-to-br from-[#D4AF37] to-amber-600 flex items-center justify-center font-bold text-xs text-black shadow-sm flex-shrink-0">
+                  {user.avatar || "NS"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-white truncate">{user.name}</p>
+                  <span className="text-[10px] text-[#D4AF37] font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+                    {user.plan || "Pro Workspace"}
+                  </span>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-white truncate">Ninad Sharma</p>
-                <span className="text-[10px] text-[#D4AF37] font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                  Pro Workspace
-                </span>
-              </div>
+
+              <button
+                onClick={logout}
+                title="Log Out"
+                className="p-1.5 rounded-md text-[#9AA5B1] hover:text-red-400 hover:bg-[#0B0B0B] transition flex-shrink-0 ml-1"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
             </div>
-          </div>
+          ) : (
+            <button
+              onClick={() => router.push("/login")}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#D4AF37] hover:bg-[#B5952F] text-black text-xs font-bold transition"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In / Login</span>
+            </button>
+          )}
         </div>
       </aside>
 
@@ -196,3 +218,5 @@ export const Sidebar = () => {
     </>
   );
 };
+
+

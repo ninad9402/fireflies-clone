@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Plus, Sparkles, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Upload, LogIn } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { GlobalSearchModal } from "../dashboard/GlobalSearchModal";
 import { CreateMeetingModal } from "../dashboard/CreateMeetingModal";
 
@@ -10,6 +12,8 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onMeetingCreated }) => {
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -41,8 +45,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onMeetingCreated }) => {
             <Upload className="w-3.5 h-3.5" />
             <span>+ Upload / Add Meeting</span>
           </button>
+
+          {!isAuthenticated && (
+            <button
+              onClick={() => router.push("/login")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#D4AF37] bg-[#1F2933] border border-[#3E4C59] hover:border-[#D4AF37] transition"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+          )}
         </div>
       </header>
+
 
       <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <CreateMeetingModal
