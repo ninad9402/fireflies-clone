@@ -33,9 +33,10 @@ const DEFAULT_USER: User = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = "fireflies_auth_user";
+const STORAGE_KEY = "fireflies_auth_v3";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();

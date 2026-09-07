@@ -15,11 +15,10 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     if (!isLoading) {
       if (!isAuthenticated && !isAuthPage) {
         router.replace("/login");
-      } else if (isAuthenticated && isAuthPage) {
-        router.replace("/");
       }
     }
   }, [isAuthenticated, isLoading, isAuthPage, router]);
+
 
   // Loading state while verifying auth session
   if (isLoading) {
