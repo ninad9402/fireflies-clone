@@ -46,15 +46,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        setUser(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.email) {
+          setUser(parsed);
+        } else {
+          setUser(null);
+        }
       } else {
-        // Default to logged in as Ninad Sharma for zero-friction demo experience
-        setUser(DEFAULT_USER);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_USER));
+        // User is not authenticated by default; require login
+        setUser(null);
       }
     } catch (e) {
       console.error("Failed to read auth state", e);
-      setUser(DEFAULT_USER);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -62,8 +66,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, pass: string): Promise<boolean> => {
     setIsLoading(true);
-    // Simulate short network latency for realism
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    // Simulate short network verification
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    if (!email || !email.includes("@")) {
+      setIsLoading(false);
+      throw new Error("Please enter a valid work email.");
+    }
+    if (!pass || pass.length < 4) {
+      setIsLoading(false);
+      throw new Error("Password must be at least 4 characters.");
+    }
 
     const nameFromEmail = email.split("@")[0].replace(/[._]/g, " ");
     const formattedName = nameFromEmail
@@ -79,9 +92,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const loggedInUser: User = {
       id: `usr_${Date.now()}`,
-      name: formattedName || "User",
+      name: formattedName || "Ninad Sharma",
       email: email.toLowerCase(),
-      role: "Member",
+      role: email.includes("admin") ? "Workspace Owner" : "Member",
       avatar: initials,
       plan: "Pro Workspace",
     };
@@ -91,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
     return true;
   };
+
 
   const loginWithOAuth = async (provider: "google" | "microsoft") => {
     setIsLoading(true);

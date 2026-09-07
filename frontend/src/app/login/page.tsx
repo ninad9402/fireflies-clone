@@ -23,14 +23,20 @@ export default function LoginPage() {
   const { login, loginWithOAuth, loginAsDemo, isLoading } = useAuth();
 
   const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("demo@fireflies.ai");
-  const [password, setPassword] = useState("password123");
-  const [name, setName] = useState("Ninad Sharma");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [forgotSent, setForgotSent] = useState(false);
+
+  const fillDemoCreds = () => {
+    setEmail("demo@fireflies.ai");
+    setPassword("password123");
+    setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +50,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push("/");
-    } catch (err) {
-      setError("Authentication failed. Please check credentials.");
+    } catch (err: any) {
+      setError(err?.message || "Authentication failed. Please check credentials.");
     } finally {
       setSubmitting(false);
     }
@@ -55,11 +61,12 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await loginWithOAuth(provider);
-    } catch (err) {
-      setError("OAuth sign-in failed. Please try again.");
+    } catch (err: any) {
+      setError(err?.message || "OAuth sign-in failed. Please try again.");
       setSubmitting(false);
     }
   };
+
 
   return (
     <div className="min-h-screen w-full bg-[#0B0B0B] text-slate-100 flex flex-col justify-between relative overflow-hidden font-sans select-none">
@@ -340,9 +347,21 @@ export default function LoginPage() {
                 )}
 
                 <div>
-                  <label className="block text-xs font-bold text-[#9AA5B1] mb-1">
-                    Work Email
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-[#9AA5B1]">
+                      Work Email
+                    </label>
+                    {mode === "signin" && (
+                      <button
+                        type="button"
+                        onClick={fillDemoCreds}
+                        className="text-[11px] font-semibold text-[#D4AF37] hover:underline flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        <span>Fill Demo Creds</span>
+                      </button>
+                    )}
+                  </div>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-[#9AA5B1] absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -355,6 +374,7 @@ export default function LoginPage() {
                     />
                   </div>
                 </div>
+
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
